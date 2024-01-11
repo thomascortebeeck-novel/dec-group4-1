@@ -62,7 +62,7 @@ Example:
 | Source name | Source type | Source documentation |
 | - | - | - |
 | Customers database | PostgreSQL database | - |
-| Orders API | REST API | - |
+| Spotify API | REST API | - |
 
 ## Solution architecture
 
@@ -78,12 +78,3 @@ Here is a sample solution architecture diagram:
 
 ![images/sample-solution-architecture-diagram.png](images/sample-solution-architecture-diagram.png)
 
-## Breakdown of tasks
-
-How is your project broken down? Who is doing what?
-
-We recommend using a free Task board such as [Trello](https://trello.com/). This makes it easy to assign and track tasks to each individual.
-
-Example:
-
-![images/kanban-task-board.png](images/kanban-task-board.png)
