@@ -8,7 +8,8 @@ Interesting Questions:
 - What is the best artist in some space?
 - How do the listening habits of users change during different times of the day and week, in each Country?
 - Genre preference per time
-- Filtering the genre 
+- Filtering the genre
+- What is the best time of the day/week/month/year to upload a new song?
 
 Thomas:
 - How many daily followers does artist x have?
@@ -22,11 +23,12 @@ A short statement about the objective of your project.
 
 Example:
 
-> The objective of our project is to provide analytical datasets from our Orders API and Customers database.
+> The objective of our project is to provide analytical datasets from Spotify API on artists metrics.
 
 ## Consumers
 
 What users would find your data useful? How do they want to access the data?
+Artists who want to followup on their audience and content.
 
 Example:
 
@@ -38,12 +40,18 @@ What questions are you trying to answer with your data? How will your data suppo
 
 Example:
 
-> - How many orders are there for each customer?
-> - What countries and regions have the most orders?
-> - What customers have their orders delayed?
-> - How many delayed orders are there for each country and region?
-> - How many orders do we have for each day?
-> - How many delayed orders do we have for each day?
+Interesting Questions:
+- How a artist performs along time.
+- What is the best artist in some space?
+- How do the listening habits of users change during different times of the day and week, in each Country?
+- Genre preference per time
+- Filtering the genre
+- What is the best time of the day/week/month/year to upload a new song?
+
+Thomas:
+- How many daily followers does artist x have?
+- Which is the most popular song of artist x ?
+- How many new followers does list x have?
 
 ## Source datasets
 
