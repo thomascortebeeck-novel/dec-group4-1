@@ -4,6 +4,7 @@ from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
 from sqlalchemy import create_engine, Table, Column, String, Integer, MetaData, ForeignKey, Boolean
 from dotenv import load_dotenv
+from spotify_helpers import get_global_top_40_artists
 
 def init_spotify_client(client_id: str, client_secret: str) -> Spotify:
     auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
@@ -147,8 +148,8 @@ def main():
     meta.create_all(engine)
 
     # Example ETL process for artists
-    artists = ["Adele", "Ed Sheeran", "Taylor Swift"]
-
+    # artists = ["Adele", "Ed Sheeran", "Taylor Swift"]
+    artists = get_global_top_40_artists(CLIENT_ID, CLIENT_SECRET)
     
     #### artist ###
     
