@@ -1,10 +1,14 @@
 import os
 import pandas as pd
+import psycopg2
+import json
+import datetime
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
 from sqlalchemy import create_engine, Table, Column, String, Integer, MetaData, ForeignKey, Boolean
 from dotenv import load_dotenv
 from spotify_helpers import get_global_top_40_artists
+from sqlalchemy import DateTime
 
 def init_spotify_client(client_id: str, client_secret: str) -> Spotify:
     auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
@@ -47,14 +51,9 @@ def transform_tracks(track_data: list[dict]) -> pd.DataFrame:
     df_selected.loc[:, 'album_id'] = df_selected['album.id']
     df_selected.rename(columns={"id": "track_id", 'album.id': 'album_id'}, inplace=True)
 
-    return df_selected[['track_id', 'name', 'duration_ms', 'popularity', 'explicit', 'preview_url', 'track_number']]
-
-
-
+    return df_selected[['track_id', 'name', 'duration_ms', 'popularity', 'explicit', 'preview_url', 'track_number', 'artist_id', 'album_id']]
 
 # extract functions for tracks, albums, playlists, and user profiles based on artist names
-
-
 def extract_albums(sp: Spotify, artist_ids: list) -> list[dict]:
     album_data = []
     for artist_id in artist_ids:
@@ -78,7 +77,7 @@ def transform_albums(album_data: list[dict]) -> pd.DataFrame:
     df_selected.loc[:, 'artist_id'] = df_selected['artists'].apply(lambda x: x[0]['id'] if x else None)
     df_selected.rename(columns={'id': 'album_id', 'release_date': 'release_date', 'total_tracks': 'total_tracks'}, inplace=True)
 
-    return df_selected[['album_id', 'name', 'release_date', 'total_tracks']]
+    return df_selected[['album_id', 'name', 'release_date', 'total_tracks', 'artist_id']]
 
 
 def transform_artists(artist_data: list[dict]) -> pd.DataFrame:
@@ -107,40 +106,65 @@ def main():
 
     sp = init_spotify_client(CLIENT_ID, CLIENT_SECRET)
 
+    # Connect to the PostgreSQL server (default database)
+    conn = psycopg2.connect(
+        host=SERVER_NAME,
+        user=DB_USERNAME,
+        password=DB_PASSWORD,
+        dbname="postgres"  # Connect to the default database
+    )
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    # Check if the target database exists
+    cursor.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{DATABASE_NAME}'")
+    exists = cursor.fetchone()
+    if not exists:
+        # Create the database if it doesn't exist
+        cursor.execute(f"CREATE DATABASE {DATABASE_NAME}")
+
+    # Close the connection to the default database
+    cursor.close()
+    conn.close()
+    
+    # Connect to spotify database
     engine = create_engine(f'postgresql://{DB_USERNAME}:{DB_PASSWORD}@{SERVER_NAME}/{DATABASE_NAME}')
     meta = MetaData()
 
     # Define Artist Table
     artist_table = Table(
         'artists', meta,
-        Column('artist_id', String, primary_key=True), # id doesn't exist ?
+        Column('artist_id', String, primary_key=True),
         Column('name', String),
         Column('popularity', Integer),
         Column('genres', String),
         Column('followers', Integer),
-        Column('spotify_url', String)
+        Column('spotify_url', String),
+        Column('load_date', DateTime, default=datetime.datetime.utcnow)
     )
 
     tracks_table = Table(
         'tracks', meta,
         Column('track_id', String, primary_key=True),
         Column('name', String),
-        # Column('artist_id', String, ForeignKey('artists.artist_id')),  # Assuming artist table has 'artist_id'
-        # Column('album_id', String, ForeignKey('albums.album_id')),    # Assuming album table has 'album_id'
+        Column('artist_id', String, ForeignKey('artists.artist_id')),
+        Column('album_id', String, ForeignKey('albums.album_id')),
         Column('duration_ms', Integer),
         Column('popularity', Integer),
         Column('explicit', Boolean),
         Column('preview_url', String),
-        Column('track_number', Integer)
+        Column('track_number', Integer),
+        Column('load_date', DateTime, default=datetime.datetime.utcnow)
     )
 
     albums_table = Table(
         'albums', meta,
         Column('album_id', String, primary_key=True),
         Column('name', String),
-        # Column('artist_id', String, ForeignKey('artists.artist_id')),  # Link to artists
+        Column('artist_id', String, ForeignKey('artists.artist_id')),
         Column('release_date', String),
-        Column('total_tracks', Integer)
+        Column('total_tracks', Integer),
+        Column('load_date', DateTime, default=datetime.datetime.utcnow)
     )
 
 
@@ -162,7 +186,7 @@ def main():
     artist_ids=get_artist_id(artist_data)
 
 
-    #### tracks ##
+    #### tracks ###
 
     track_data=extract_top_tracks(sp,artist_data)
 
