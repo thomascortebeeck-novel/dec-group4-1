@@ -36,10 +36,14 @@ def extract_top_tracks(sp, artist_data):
 def transform_tracks(track_data: list[dict]) -> pd.DataFrame:
     df_tracks = pd.json_normalize(track_data)
     df_selected = df_tracks[['id', 'name', 'artists', 'album.id', 'duration_ms', 'popularity', 'explicit', 'preview_url', 'track_number']]
-    df_selected['artist_id'] = df_selected['artists'].apply(lambda x: x[0]['id'] if x else None)
-    df_selected['album_id'] = df_selected['album.id']
+    
+    # Use .loc[] for assignments
+    df_selected.loc[:, 'artist_id'] = df_selected['artists'].apply(lambda x: x[0]['id'] if x else None)
+    df_selected.loc[:, 'album_id'] = df_selected['album.id']
     df_selected.rename(columns={"id": "track_id", 'album.id': 'album_id'}, inplace=True)
+
     return df_selected[['track_id', 'name', 'artist_id', 'album_id', 'duration_ms', 'popularity', 'explicit', 'preview_url', 'track_number']]
+
 
 
 
@@ -52,11 +56,6 @@ def transform_artists(artist_data: list[dict]) -> pd.DataFrame:
     df_selected = df_artists[["id",'name', 'popularity', 'genres', 'followers.total', 'external_urls.spotify']]
     df_selected.rename(columns={"id":"artist_id",'followers.total': 'followers', 'external_urls.spotify': 'spotify_url'}, inplace=True)
     return df_selected
-
-
-
-
-
 
 # Similar transform functions for tracks, albums, playlists, and user profiles
 
@@ -122,21 +121,14 @@ def main():
 
     track_data=extract_top_tracks(sp,artist_data)
 
-
-    top_track=extract_and_insert_track_data(artist_id)
-
-
     artist_df = transform_artists(artist_data)
 
-
-    top_track_df = transform_tracks(artist_data)
-
-
+    top_track_df = transform_tracks(track_data)
 
     load_data(artist_df, 'artists', engine)
 
 
-    load_data(top_track_df, 'tracks_table', engine)
+    load_data(top_track_df, 'tracks', engine)
 
     
 
