@@ -19,19 +19,51 @@ def extract_artists(sp: Spotify, artists: list) -> list[dict]:
             artist_data.append(artist_items[0])
     return artist_data
 
+
+def extract_top_tracks_single(sp: Spotify, artist_id: str) -> list[dict]:
+    results = sp.artist_top_tracks(artist_id)
+    return results['tracks']
+ 
+
+def extract_top_tracks(sp, artist_data):
+    top_tracks_data = []
+    for artist in artist_data:
+        artist_id = artist['id']
+        top_tracks_data+= extract_top_tracks_single(sp, artist_id)
+    return top_tracks_data
+
+
+def transform_tracks(track_data: list[dict]) -> pd.DataFrame:
+    df_tracks = pd.json_normalize(track_data)
+    df_selected = df_tracks[['id', 'name', 'artists', 'album.id', 'duration_ms', 'popularity', 'explicit', 'preview_url', 'track_number']]
+    df_selected['artist_id'] = df_selected['artists'].apply(lambda x: x[0]['id'] if x else None)
+    df_selected['album_id'] = df_selected['album.id']
+    df_selected.rename(columns={"id": "track_id", 'album.id': 'album_id'}, inplace=True)
+    return df_selected[['track_id', 'name', 'artist_id', 'album_id', 'duration_ms', 'popularity', 'explicit', 'preview_url', 'track_number']]
+
+
+
 # extract functions for tracks, albums, playlists, and user profiles based on artist names
+
 
 # Example transform function for artists
 def transform_artists(artist_data: list[dict]) -> pd.DataFrame:
     df_artists = pd.json_normalize(artist_data)
-    df_selected = df_artists[['name', 'popularity', 'genres', 'followers.total', 'external_urls.spotify']]
-    df_selected.rename(columns={'followers.total': 'followers', 'external_urls.spotify': 'spotify_url'}, inplace=True)
+    df_selected = df_artists[["id",'name', 'popularity', 'genres', 'followers.total', 'external_urls.spotify']]
+    df_selected.rename(columns={"id":"artist_id",'followers.total': 'followers', 'external_urls.spotify': 'spotify_url'}, inplace=True)
     return df_selected
+
+
+
+
+
 
 # Similar transform functions for tracks, albums, playlists, and user profiles
 
 def load_data(df: pd.DataFrame, table_name: str, engine):
     df.to_sql(table_name, engine, if_exists='replace', index=False)
+
+
 
 def main():
     load_dotenv()
@@ -62,8 +94,8 @@ def main():
         'tracks', meta,
         Column('track_id', String, primary_key=True),
         Column('name', String),
-        # Column('artist_id', String, ForeignKey('artists.artist_id')),  # Assuming artist table has 'artist_id'
-        # Column('album_id', String, ForeignKey('albums.album_id')),    # Assuming album table has 'album_id'
+        Column('artist_id', String, ForeignKey('artists.artist_id')),  # Assuming artist table has 'artist_id'
+        Column('album_id', String, ForeignKey('albums.album_id')),    # Assuming album table has 'album_id'
         Column('duration_ms', Integer),
         Column('popularity', Integer),
         Column('explicit', Boolean),
@@ -75,37 +107,38 @@ def main():
         'albums', meta,
         Column('album_id', String, primary_key=True),
         Column('name', String),
-        # Column('artist_id', String, ForeignKey('artists.artist_id')),  # Link to artists
+        Column('artist_id', String, ForeignKey('artists.artist_id')),  # Link to artists
         Column('release_date', String),
         Column('total_tracks', Integer)
     )
-
-    # playlists_table = Table(
-    #     'playlists', meta,
-    #     Column('playlist_id', String, primary_key=True),
-    #     Column('name', String),
-    #     Column('owner_id', String),  # User ID of the playlist owner
-    #     Column('public', Boolean),
-    #     Column('total_tracks', Integer)
-    # )
-
-    # user_profiles_table = Table(
-    #     'user_profiles', meta,
-    #     Column('user_id', String, primary_key=True),
-    #     Column('display_name', String),
-    #     Column('email', String),  # Email might be sensitive data; ensure compliance with privacy laws
-    #     Column('country', String),
-    #     Column('subscription_type', String)
-    # )
 
     # Create tables
     meta.create_all(engine)
 
     # Example ETL process for artists
     artists = ["Adele", "Ed Sheeran", "Taylor Swift"]
+
     artist_data = extract_artists(sp, artists)
+
+    track_data=extract_top_tracks(sp,artist_data)
+
+
+    top_track=extract_and_insert_track_data(artist_id)
+
+
     artist_df = transform_artists(artist_data)
+
+
+    top_track_df = transform_tracks(artist_data)
+
+
+
     load_data(artist_df, 'artists', engine)
+
+
+    load_data(top_track_df, 'tracks_table', engine)
+
+    
 
     # Similar ETL processes for tracks, albums, playlists, user profiles
 
