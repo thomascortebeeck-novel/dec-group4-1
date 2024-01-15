@@ -38,6 +38,31 @@ def extract_top_tracks(sp, artist_data):
     return top_tracks_data
 
 
+
+
+def extract_global_playlist_countries(sp, markets):
+    global_playlist = []
+    for market in markets:
+        # Fetch top tracks for each market
+        top_tracks = sp.playlist_tracks('37i9dQZEVXbMDoHDwVN2tF', market=market)
+
+        # Extracting required info from each track
+        for track in top_tracks['items']:
+            # Assuming track data structure contains 'track' which has 'artists' and 'id'
+            artist_id = track['track']['artists'][0]['id']  # ID of the first artist
+            playlist_country = market
+
+            # Append the information as a list to the global_playlist
+            global_playlist.append([artist_id, playlist_country])
+
+    return global_playlist
+
+
+
+
+
+
+
 def get_artist_id(artist_data):
     return  [artist['id'] for artist in artist_data]
 
@@ -129,6 +154,12 @@ def main():
     engine = create_engine(f'postgresql://{DB_USERNAME}:{DB_PASSWORD}@{SERVER_NAME}/{DATABASE_NAME}')
     meta = MetaData()
 
+
+
+    # Example ETL process for artists
+    # artists = ["Adele", "Ed Sheeran", "Taylor Swift"]
+    
+
     # Define Artist Table
     artist_table = Table(
         'artists', meta,
@@ -141,30 +172,8 @@ def main():
         Column('load_date', DateTime, default=datetime.datetime.utcnow),
        # schema='raw'
     )
-    # Create tables
-    meta.create_all(engine)
 
-    # Example ETL process for artists
-    # artists = ["Adele", "Ed Sheeran", "Taylor Swift"]
-    
-    #### artist ###
 
-    # Load the CSV file
-    file_path = 'top_40_artists.csv'
-    df = pd.read_csv(file_path)
-
-    # Extract the 'Artist Name' column
-    artists = df['Artist Name']
-    
-    #### 
-
-    artist_data = extract_artists(sp, artists)
-
-    artist_df = transform_artists(artist_data)
-
-    load_data(artist_df, 'artists', engine)
-
-    #artist_ids=get_artist_id(artist_data)
 
     tracks_table = Table(
         'tracks', meta,
@@ -194,8 +203,30 @@ def main():
     )
 
 
+
+    playlist_global = Table(
+        'playlist', meta,
+        Column('artist_id', String),
+        Column('playlist_id', String),
+        Column('playlist_country', Integer))
+
+
     # Example ETL process for artists
     # artists = ["Adele", "Ed Sheeran", "Taylor Swift"]
+
+    
+    # Create tables
+    meta.create_all(engine)
+
+    #### artist ###
+
+    # Load the CSV file
+    file_path = 'top_40_artists.csv'
+    df = pd.read_csv(file_path)
+
+    # Extract the 'Artist Name' column
+    artists = df['Artist Name']
+    
 
     #### artist ###
     
@@ -226,6 +257,15 @@ def main():
     # Load album data into the database
     load_data(album_df, 'albums', engine)
     # Similar ETL processes for tracks, albums, playlists, user profiles
+
+
+    #### PLAYLISTS
+    markets=["US","ES","PT","UK","BE"]
+
+    markets_data=extract_global_playlist_countries(sp,markets)
+
+
+
 
 if __name__ == "__main__":
     main()
