@@ -138,17 +138,26 @@ def main():
         Column('genres', String),
         Column('followers', Integer),
         Column('spotify_url', String),
-        Column('load_date', DateTime, default=datetime.datetime.utcnow)
+        Column('load_date', DateTime, default=datetime.datetime.utcnow),
+       # schema='raw'
     )
     # Create tables
     meta.create_all(engine)
 
     # Example ETL process for artists
     # artists = ["Adele", "Ed Sheeran", "Taylor Swift"]
-    artists = get_global_top_40_artists(CLIENT_ID, CLIENT_SECRET)
     
     #### artist ###
+
+    # Load the CSV file
+    file_path = 'top_40_artists.csv'
+    df = pd.read_csv(file_path)
+
+    # Extract the 'Artist Name' column
+    artists = df['Artist Name']
     
+    #### 
+
     artist_data = extract_artists(sp, artists)
 
     artist_df = transform_artists(artist_data)
@@ -168,7 +177,8 @@ def main():
         Column('explicit', Boolean),
         Column('preview_url', String),
         Column('track_number', Integer),
-        Column('load_date', DateTime, default=datetime.datetime.utcnow)
+        Column('load_date', DateTime, default=datetime.datetime.utcnow),
+         #schema='raw'
     )
 
     albums_table = Table(
@@ -178,17 +188,15 @@ def main():
         Column('artist_id', String),
         Column('release_date', String),
         Column('total_tracks', Integer),
-        Column('load_date', DateTime, default=datetime.datetime.utcnow)
+        Column('load_date', DateTime, default=datetime.datetime.utcnow),
+         #schema='raw'
         #schema?
     )
 
-    # Create tables
-    meta.create_all(engine)
 
     # Example ETL process for artists
     # artists = ["Adele", "Ed Sheeran", "Taylor Swift"]
-    artists = get_global_top_40_artists(CLIENT_ID, CLIENT_SECRET)
-    
+
     #### artist ###
     
     artist_data = extract_artists(sp, artists)
