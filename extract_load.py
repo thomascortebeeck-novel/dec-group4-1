@@ -93,8 +93,6 @@ def load_data(df: pd.DataFrame, table_name: str, engine):
     print(df)
     df.to_sql(table_name, engine, if_exists='replace', index=False)
 
-
-
 def main():
     load_dotenv()
     CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID")
@@ -134,7 +132,7 @@ def main():
     # Define Artist Table
     artist_table = Table(
         'artists', meta,
-        Column('artist_id', String, primary_key=True),
+        Column('artist_id', String),
         Column('name', String),
         Column('popularity', Integer),
         Column('genres', String),
@@ -142,13 +140,29 @@ def main():
         Column('spotify_url', String),
         Column('load_date', DateTime, default=datetime.datetime.utcnow)
     )
+    # Create tables
+    meta.create_all(engine)
+
+    # Example ETL process for artists
+    # artists = ["Adele", "Ed Sheeran", "Taylor Swift"]
+    artists = get_global_top_40_artists(CLIENT_ID, CLIENT_SECRET)
+    
+    #### artist ###
+    
+    artist_data = extract_artists(sp, artists)
+
+    artist_df = transform_artists(artist_data)
+
+    load_data(artist_df, 'artists', engine)
+
+    #artist_ids=get_artist_id(artist_data)
 
     tracks_table = Table(
         'tracks', meta,
-        Column('track_id', String, primary_key=True),
+        Column('track_id', String),
         Column('name', String),
-        Column('artist_id', String, ForeignKey('artists.artist_id')),
-        Column('album_id', String, ForeignKey('albums.album_id')),
+        Column('artist_id', String),
+        Column('album_id', String),
         Column('duration_ms', Integer),
         Column('popularity', Integer),
         Column('explicit', Boolean),
@@ -161,12 +175,12 @@ def main():
         'albums', meta,
         Column('album_id', String, primary_key=True),
         Column('name', String),
-        Column('artist_id', String, ForeignKey('artists.artist_id')),
+        Column('artist_id', String),
         Column('release_date', String),
         Column('total_tracks', Integer),
         Column('load_date', DateTime, default=datetime.datetime.utcnow)
+        #schema?
     )
-
 
     # Create tables
     meta.create_all(engine)
@@ -184,7 +198,6 @@ def main():
     load_data(artist_df, 'artists', engine)
 
     artist_ids=get_artist_id(artist_data)
-
 
     #### tracks ###
 
@@ -204,9 +217,18 @@ def main():
 
     # Load album data into the database
     load_data(album_df, 'albums', engine)
-
     # Similar ETL processes for tracks, albums, playlists, user profiles
 
 if __name__ == "__main__":
     main()
 
+
+
+
+
+
+
+
+
+
+## cam we make incremental from the api
