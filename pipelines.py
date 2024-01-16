@@ -41,7 +41,7 @@ if __name__ == "__main__":
     
     # Load the CSV file
 
-    file_path = 'top_40_artists.csv'
+    file_path = 'top_artist_from_global50.csv'
 
     df = pd.read_csv(file_path)
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     artist_df = transform_artists(artist_data)
 
 
-    load_data(artist_df,"artist",
+    load_data(artist_df,"artists",
         db_user=DB_USERNAME,
         db_password=DB_PASSWORD,
         db_server_name=SERVER_NAME,
@@ -108,7 +108,7 @@ if __name__ == "__main__":
 
     df_playlist = transform_playlist(playlist_data)
 
-    load_data(df_playlist,"playlists",
+    load_data(df_playlist,"playlist",
         db_user=DB_USERNAME,
         db_password=DB_PASSWORD,
         db_server_name=SERVER_NAME,

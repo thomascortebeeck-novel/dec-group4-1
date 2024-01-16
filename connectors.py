@@ -13,15 +13,11 @@ from sqlalchemy.dialects import postgresql
 import pandas as pd
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
-from sqlalchemy import create_engine, Table, Column, String, Integer, MetaData, ForeignKey, Boolean
-from sqlalchemy import DateTime
 import pandas as pd
 import datetime
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
 from sqlalchemy import create_engine, Table, Column, String, Integer, MetaData, ForeignKey, Boolean
-from dotenv import load_dotenv
-from spotify_helpers import get_global_top_40_artists
 from sqlalchemy import DateTime
 
 
@@ -88,7 +84,6 @@ def write_to_database(engine: Engine, df: pd.DataFrame,table_name:str):
         Column('artist_id', String),
         Column('playlist_country', Integer))
     
-    print(" The meta engine", engine)
     
     meta.create_all(engine)  # creates table if it does not exist
     df.to_sql(table_name, engine, if_exists='replace', index=False)

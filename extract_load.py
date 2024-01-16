@@ -15,13 +15,12 @@ def init_spotify_client(client_id: str, client_secret: str) -> Spotify:
     return Spotify(auth_manager=auth_manager)
 
 # Example extract function for artists
-def extract_artists(sp: Spotify, artists: list) -> list[dict]:
+def extract_artists(sp: Spotify, artist_ids: list) -> list[dict]:
     artist_data = []
-    for artist_name in artists:
-        results = sp.search(q=f'artist:{artist_name}', type='artist', limit=1)
-        artist_items = results['artists']['items']
-        if artist_items:
-            artist_data.append(artist_items[0])
+    for artist_id in artist_ids:
+        artist = sp.artist(artist_id)
+        if artist:
+            artist_data.append(artist)
     return artist_data
 
 
@@ -55,30 +54,34 @@ def extract_global_playlist_countries(sp, markets):
     return global_playlist
 
 
-def extract_global_playlist_countries(sp, markets):
+def extract_global_playlist_countries(sp, playlist_dict):
     global_playlist = []
-    for market in markets:
-        top_tracks = sp.playlist_tracks('37i9dQZEVXbMDoHDwVN2tF', market=market)
+    for country, playlist_id in playlist_dict.items():
+        top_tracks = sp.playlist_tracks(playlist_id)
         for track_item in top_tracks['items']:
             track = track_item['track']
-            global_playlist.append((track, market))  # Appending as a tuple
+            global_playlist.append((track, country))  # Appending as a tuple
     return global_playlist
 
 
 
 def transform_playlist(playlist_data):
-    # Normalize and flatten the data
-    tracks = [item[0] for item in playlist_data]  # Extracting track details
-    countries = [item[1] for item in playlist_data]  # Extracting country details
-    df_tracks = pd.json_normalize(tracks)
-    
-    # Add the country data
-    df_tracks['playlist_country'] = countries
-    
-    # Select and rename columns
-    df_selected = df_tracks[['id', 'playlist_country']]
-    df_selected = df_selected.rename(columns={"id": "artist_id"})
-    return df_selected
+    # Initialize an empty list to hold artist IDs and countries
+    artist_data = []
+
+    # Loop through each track in the playlist data
+    for track, country in playlist_data:
+        # Each track can have multiple artists
+        for artist in track['artists']:
+            # Extract the artist ID and append it along with the country to the list
+            artist_data.append((artist['id'], country))
+
+    # Convert the list of tuples into a DataFrame
+    df_artists = pd.DataFrame(artist_data, columns=['artist_id', 'playlist_country'])
+
+    return df_artists
+
+
 
 
 def get_artist_id(artist_data):
@@ -142,6 +145,11 @@ def load_data(df: pd.DataFrame, table_name: str, engine):
     print("here")
     print(df)
     df.to_sql(table_name, engine, if_exists='replace', index=False)
+
+
+
+
+
 
 def main():
     load_dotenv()
@@ -245,11 +253,11 @@ def main():
     #### artist ###
 
     # Load the CSV file
-    file_path = 'top_40_artists.csv'
+    file_path = 'top_artist_from_global50.csv'
     df = pd.read_csv(file_path)
 
     # Extract the 'Artist Name' column
-    artists = df['Artist Name']
+    artists = df['artist_id']
     
 
     #### artist ###
@@ -284,10 +292,14 @@ def main():
 
 
     #### PLAYLISTS
+    playlist_dict = { "SW": "7jmQBEvJyGHPqKEl5UcEe9",
+        "UK": "37i9dQZEVXbLnolsZ8PSNw",
+        "BE": "37i9dQZEVXbJNSeeHswcKB",
+        "USA":"37i9dQZEVXbLRQDuF5jeBp",
+        "PT":"37i9dQZEVXbKyJS56d1pgi"
+    }
 
-    markets=["US","ES","PT","BE","GB"]
-
-    playlist_data = extract_global_playlist_countries(sp, markets)
+    playlist_data = extract_global_playlist_countries(sp, playlist_dict)
 
     df_playlist = transform_playlist(playlist_data)
 
@@ -296,7 +308,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
 
