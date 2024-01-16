@@ -1,9 +1,11 @@
 from dotenv import load_dotenv
 import os
-from assets import load_data,extract_artists,transform_artists,get_artist_id,extract_top_tracks,transform_tracks,extract_albums,transform_albums,extract_global_playlist_countries,transform_playlist
+from assets import load_data,extract_artists,transform_artists,get_artist_id,extract_top_tracks,transform_tracks,extract_albums,transform_albums,extract_global_playlist_countries,transform_playlist, transform
 import pandas as pd
 import psycopg2
 from connectors import init_spotify_client
+from jinja2 import Environment, FileSystemLoader, Template
+from sqlalchemy import create_engine, Table, Column, String, Integer, MetaData, ForeignKey, Boolean
 
 
 if __name__ == "__main__":
@@ -53,7 +55,6 @@ if __name__ == "__main__":
 
     artist_df = transform_artists(artist_data)
 
-
     load_data(artist_df,"artist",
         db_user=DB_USERNAME,
         db_password=DB_PASSWORD,
@@ -68,6 +69,7 @@ if __name__ == "__main__":
     #### tracks ###
 
     track_data=extract_top_tracks(sp,artist_data)
+
 
     top_track_df = transform_tracks(track_data)
 
@@ -87,6 +89,7 @@ if __name__ == "__main__":
 
     # Transform album data
     album_df = transform_albums(album_data)
+    #print(album_df)
 
     # Load album data into the database
 
@@ -105,10 +108,13 @@ if __name__ == "__main__":
     markets=["US","ES","PT","BE","GB"]
 
     playlist_data = extract_global_playlist_countries(sp, markets)
+    # print(playlist_data)  
 
     df_playlist = transform_playlist(playlist_data)
+    print(df_playlist)  
 
-    load_data(df_playlist,"playlists",
+
+    target_connection_database = load_data(df_playlist,"playlists",
         db_user=DB_USERNAME,
         db_password=DB_PASSWORD,
         db_server_name=SERVER_NAME,
@@ -116,6 +122,20 @@ if __name__ == "__main__":
         port=PORT
 
     )
+    # schema needs to be added still
 
+    target_engine = create_engine(target_connection_database)
 
+    transform_environment = Environment(loader=FileSystemLoader("sql"))
 
+    staging_albums_table = "serving_albums"
+    staging_albums_sql_template = transform_environment.get_template(
+        f"{staging_albums_table}.sql"
+    )
+    transform_test = transform(
+        engine=target_engine,
+        sql_template=staging_albums_sql_template,
+        table_name=staging_albums_table,
+    )
+
+    print(transform_test)
