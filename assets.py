@@ -17,14 +17,16 @@ from connectors import init_spotify_client, get_database_engine, write_to_databa
 
 
 # Example extract function for artists
-def extract_artists(sp: Spotify, artists: list) -> list[dict]:
+def extract_artists(sp: Spotify, artist_ids: list) -> list[dict]:
     artist_data = []
-    for artist_name in artists:
-        results = sp.search(q=f'artist:{artist_name}', type='artist', limit=1)
-        artist_items = results['artists']['items']
-        if artist_items:
-            artist_data.append(artist_items[0])
+    for artist_id in artist_ids:
+        try:
+            artist = sp.artist(artist_id)
+            artist_data.append(artist)
+        except Exception as e:
+            print(f"An error occurred while retrieving data for artist ID {artist_id}: {e}")
     return artist_data
+
 
 
 def extract_top_tracks_single(sp: Spotify, artist_id: str) -> list[dict]:
@@ -40,45 +42,32 @@ def extract_top_tracks(sp, artist_data):
     return top_tracks_data
 
 
-def extract_global_playlist_countries(sp, markets):
+
+def extract_global_playlist_countries(sp, playlist_dict):
     global_playlist = []
-    for market in markets:
-        # Fetch top tracks for each market
-        top_tracks = sp.playlist_tracks('37i9dQZEVXbMDoHDwVN2tF', market=market)
-
-        # Extracting required info from each track
-        for track in top_tracks['items']:
-            playlist_country = market
-            # Append the information as a list to the global_playlist
-            global_playlist.append([track, playlist_country])
-
-    return global_playlist
-
-
-def extract_global_playlist_countries(sp, markets):
-    global_playlist = []
-    for market in markets:
-        top_tracks = sp.playlist_tracks('37i9dQZEVXbMDoHDwVN2tF', market=market)
+    for country, playlist_id in playlist_dict.items():
+        top_tracks = sp.playlist_tracks(playlist_id)
         for track_item in top_tracks['items']:
             track = track_item['track']
-            global_playlist.append((track, market))  # Appending as a tuple
+            global_playlist.append((track, country))  # Appending as a tuple
     return global_playlist
-
 
 
 def transform_playlist(playlist_data):
-    # Normalize and flatten the data
-    tracks = [item[0] for item in playlist_data]  # Extracting track details
-    countries = [item[1] for item in playlist_data]  # Extracting country details
-    df_tracks = pd.json_normalize(tracks)
-    
-    # Add the country data
-    df_tracks['playlist_country'] = countries
-    
-    # Select and rename columns
-    df_selected = df_tracks[['id', 'playlist_country']]
-    df_selected = df_selected.rename(columns={"id": "artist_id"})
-    return df_selected
+    # Initialize an empty list to hold artist IDs and countries
+    artist_data = []
+
+    # Loop through each track in the playlist data
+    for track, country in playlist_data:
+        # Each track can have multiple artists
+        for artist in track['artists']:
+            # Extract the artist ID and append it along with the country to the list
+            artist_data.append((artist['id'], country))
+
+    # Convert the list of tuples into a DataFrame
+    df_artists = pd.DataFrame(artist_data, columns=['artist_id', 'playlist_country'])
+
+    return df_artists
 
 
 def get_artist_id(artist_data):
