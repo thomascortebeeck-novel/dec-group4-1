@@ -11,3 +11,10 @@ playlist_dict:
   BE: "37i9dQZEVXbJNSeeHswcKB"
   US: "37i9dQZEVXbLRQDuF5jeBp"
   PT: "37i9dQZEVXbKyJS56d1pgi"
+
+name: pipelines
+config: 
+  log_folder_path: "./etl_project/logs"
+schedule:
+  run_seconds: 15
+  poll_seconds: 5
