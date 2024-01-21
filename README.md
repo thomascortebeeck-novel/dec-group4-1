@@ -78,3 +78,12 @@ Here is a sample solution architecture diagram:
 
 ![images/sample-solution-architecture-diagram.png](images/sample-solution-architecture-diagram.png)
 
+## Build and run the dockerfile
+
+```bash
+# build spotify_etl docker image
+docker build -t spotify_etl:1.0 .
+
+# run spotify_etl docker container
+docker run --env-file .env -v spotify_etl:/app/ spotify_etl:1.0
+```
