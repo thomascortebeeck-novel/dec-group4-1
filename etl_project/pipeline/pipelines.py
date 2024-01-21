@@ -7,13 +7,12 @@ import psycopg2
 from sqlalchemy import create_engine, Table, Column, String, Integer, MetaData, ForeignKey, Boolean
 from sqlalchemy import DateTime
 import datetime
-
-
-
-
+from jinja2 import Environment, FileSystemLoader, Template
+from sqlalchemy.engine import URL, Engine
 
 from dotenv import load_dotenv
 import os
+from etl_project.assets.transformations import SqlTransform
 from etl_project.assets.spotify_assets import (
     extract_artists,
     transform_artists,
@@ -23,15 +22,11 @@ from etl_project.assets.spotify_assets import (
     extract_global_playlist_countries,
     transform_playlist,
     extract_albums,
-    transform_albums
+    transform_albums, 
 )
-
 from etl_project.connectors.postgresql import PostgreSqlClient
 from etl_project.connectors.spotify_api import SpotifyAPI
 from sqlalchemy import Table, MetaData, Column, Integer, String, Float
-
-
-
 
 if __name__ == "__main__":
     load_dotenv()
@@ -126,7 +121,7 @@ if __name__ == "__main__":
     top_track_df = transform_tracks(track_data)
 
 
-    print(top_track_df)
+    # print(top_track_df)
 
     tracks_table = Table(
         'tracks', metadata,
@@ -235,25 +230,98 @@ if __name__ == "__main__":
 
 
 
+##################### THOMAS ENGINE
+
+    target_engine = create_engine(f'postgresql://{DB_USERNAME}:{DB_PASSWORD}@{SERVER_NAME}:{PORT}/{DATABASE_NAME}')
+    transform_environment = Environment(loader=FileSystemLoader("etl_project/assets/sql/transform"))
 
 
-
-    """ 
-    # schema needs to be added still
+#### staging_albums_table
     
-    target_engine = create_engine(target_connection_database)
-
-    transform_environment = Environment(loader=FileSystemLoader("sql"))
-
-    staging_albums_table = "serving_albums"
-    staging_albums_sql_template = transform_environment.get_template(
-        f"{staging_albums_table}.sql"
-    )
-    transform_test = transform(
+    staging_albums_table = SqlTransform(
         engine=target_engine,
-        sql_template=staging_albums_sql_template,
-        table_name=staging_albums_table,
+        environment=transform_environment,
+        table_name="staging_albums",
     )
 
-    print(transform_test)
-    """
+    print(staging_albums_table)
+
+    load(
+        df=staging_albums_table,
+        postgresql_client=postgresql_client,
+        table=staging_albums_table,
+        metadata=metadata,
+        load_method="insert",
+    )
+
+#### staging_artists_table
+
+    staging_artists_table = SqlTransform(
+        engine=target_engine,
+        environment=transform_environment,
+        table_name="staging_artists",
+    )
+
+    print(staging_artists_table)
+
+    load(
+        df=staging_artists_table,
+        postgresql_client=postgresql_client,
+        table=staging_artists_table,
+        metadata=metadata,
+        load_method="insert",
+    )
+
+#### staging_playlists_table
+
+    staging_playlists_table = SqlTransform(
+        engine=target_engine,
+        environment=transform_environment,
+        table_name="staging_playlists",
+    )
+
+    print(staging_playlists_table)
+
+    load(
+        df=staging_playlists_table,
+        postgresql_client=postgresql_client,
+        table=staging_playlists_table,
+        metadata=metadata,
+        load_method="insert",
+    )
+
+#### staging_tracks_table
+
+    staging_tracks_table = SqlTransform(
+        engine=target_engine,
+        environment=transform_environment,
+        table_name="staging_tracks",
+    )
+
+    print(staging_tracks_table)
+
+    load(
+        df=staging_tracks_table,
+        postgresql_client=postgresql_client,
+        table=staging_tracks_table,
+        metadata=metadata,
+        load_method="insert",
+    )
+
+#### serving_playlists_artists
+
+    serving_playlists_artists_table = SqlTransform(
+        engine=target_engine,
+        environment=transform_environment,
+        table_name="serving_playlists_artists",
+    )
+
+    print(serving_playlists_artists_table)
+
+    load(
+        df=serving_playlists_artists_table,
+        postgresql_client=postgresql_client,
+        table=serving_playlists_artists_table,
+        metadata=metadata,
+        load_method="insert",
+    )
