@@ -1,10 +1,12 @@
 WITH staging_albums AS (
     SELECT
         album_id,
-        LOWER(name) AS album_name,
-        release_date
+        LOWER(album_name) AS album_name,
+        album_type,
+        release_date,
         total_tracks,
-        artist_id
+        artist_id,
+        load_date
     FROM
         albums
 )
