@@ -3,12 +3,11 @@ WITH staging_artist AS (
         artist_id,
         LOWER(name) AS artist_name,
         CAST(popularity AS FLOAT) AS popularity,
-        genres,
+        REPLACE(REPLACE(REPLACE(genres, '"', ''), '{', ''), '}', '') AS genres,
         followers,
-        spotify_url, 
-        load_date
+        spotify_url
     FROM
-        artists
+        artist
 )
 
-SELECT * FROM staging_artist
+SELECT * FROM staging_artist;
