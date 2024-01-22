@@ -78,3 +78,19 @@ Here is a sample solution architecture diagram:
 
 ![images/sample-solution-architecture-diagram.png](images/sample-solution-architecture-diagram.png)
 
+## Build and run the dockerfile
+
+```bash
+# build spotify_etl docker image
+docker build -t spotify_etl:1.0 .
+
+# run spotify_etl docker container
+docker run --env-file .env -v spotify_etl:/app/ spotify_etl:1.0
+
+# re-build the image with the docker hub user and repository
+docker build -t gklimo/spotify_etl:1.0 .
+
+# push to repository
+docker push gklimo/spotify_etl:tagname
+
+```
