@@ -94,3 +94,12 @@ docker build -t gklimo/spotify_etl:1.0 .
 docker push gklimo/spotify_etl:tagname
 
 ```
+
+
+## Runing the test
+- command: -m etl_project_test.connectors.test_spotify_api
+
+### Running the etl project:
+-  command : -m etl_project.pipeline.pipelines
+### Running the etl project sql :
+-  command : -m etl_project_sql_10.pipelines.pipeline
