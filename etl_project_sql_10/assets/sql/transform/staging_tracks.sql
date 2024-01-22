@@ -8,7 +8,9 @@ WITH staging_tracks AS (
         preview_url,
         track_number,
         artist_id,
-        album_id
+        album_id, 
+		market, 
+		load_date
     FROM
         tracks
     WHERE
