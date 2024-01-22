@@ -17,6 +17,6 @@ config:
   log_folder_path: "./etl_project/logs"
   artist_id_folder_path: "etl_project/data/top_artist_from_global50.csv"
 schedule:
-  run_minutes: 15 # Setting for how often the pipeline should run, in minutes
-  poll_seconds: 5  # Setting for how often to check the schedule, in seconds
+  run_minutes: 0.1 # Setting for how often the pipeline should run, in minutes
+  poll_seconds: 3000  # Setting for how often to check the schedule, in seconds
 
