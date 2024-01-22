@@ -1,0 +1,13 @@
+market:
+  - US
+  - SE
+  - GB
+  - BE
+  - PT
+
+playlist_dict:
+  SE: "7jmQBEvJyGHPqKEl5UcEe9"
+  GB: "37i9dQZEVXbLnolsZ8PSNw"
+  BE: "37i9dQZEVXbJNSeeHswcKB"
+  US: "37i9dQZEVXbLRQDuF5jeBp"
+  PT: "37i9dQZEVXbKyJS56d1pgi"
