@@ -1,0 +1,8 @@
+name: dvd_rental
+config: 
+  extract_template_path: "./etl_project_sql_10/assets/sql/extract"
+  transform_template_path: "./etl_project_sql_10/assets/sql/transform"
+  log_folder_path: "./etl_project_sql_10/logs"
+schedule:
+  run_seconds: 5
+  poll_seconds: 2
