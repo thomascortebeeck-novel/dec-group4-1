@@ -35,6 +35,23 @@ import psycopg2
 import logging
 import schedule
 import time
+from jinja2 import Environment, FileSystemLoader
+from dotenv import load_dotenv
+import os
+from etl_project.assets.extract_load_transform import (
+    extract_load,
+    transform,
+    SqlTransform,
+)
+from graphlib import TopologicalSorter
+from pathlib import Path
+import schedule
+import time
+import yaml
+import psycopg2
+import logging
+
+
 
 def create_database(server_name, db_username, db_password, database_name, port):
     try:
@@ -273,6 +290,103 @@ def pipeline(config: dict, pipeline_logging: PipelineLogging):
 
 
 
+def run_pipeline_sql(pipeline_config: dict, postgresql_logging_client: PostgreSqlClient):
+    metadata_logging = MetaDataLogging(
+        pipeline_name=pipeline_config.get("name"),
+        postgresql_client=postgresql_logging_client,
+        config=pipeline_config.get("config"),
+    )
+    pipeline_logging = PipelineLogging(
+        pipeline_name=pipeline_config.get("name"),
+        log_folder_path=pipeline_config.get("config").get("log_folder_path"),
+    )
+
+    SOURCE_DATABASE_NAME = os.environ.get("SOURCE_DATABASE_NAME")
+    SOURCE_SERVER_NAME = os.environ.get("SOURCE_SERVER_NAME")
+    SOURCE_DB_USERNAME = os.environ.get("SOURCE_DB_USERNAME")
+    SOURCE_DB_PASSWORD = os.environ.get("SOURCE_DB_PASSWORD")
+    SOURCE_PORT = os.environ.get("SOURCE_PORT")
+    TARGET_DATABASE_NAME = os.environ.get("TARGET_DATABASE_NAME")
+    TARGET_SERVER_NAME = os.environ.get("TARGET_SERVER_NAME")
+    TARGET_DB_USERNAME = os.environ.get("TARGET_DB_USERNAME")
+    TARGET_DB_PASSWORD = os.environ.get("TARGET_DB_PASSWORD")
+    TARGET_PORT = os.environ.get("TARGET_PORT")
+    try:
+        metadata_logging.log()  # start run
+        pipeline_logging.logger.info("Creating source client")
+
+        create_database(SOURCE_SERVER_NAME, SOURCE_DB_USERNAME, SOURCE_DB_PASSWORD, SOURCE_DATABASE_NAME, SOURCE_PORT)
+
+        source_postgresql_client = PostgreSqlClient(
+            server_name=SOURCE_SERVER_NAME,
+            database_name=SOURCE_DATABASE_NAME,
+            username=SOURCE_DB_USERNAME,
+            password=SOURCE_DB_PASSWORD,
+            port=SOURCE_PORT,
+        )
+        pipeline_logging.logger.info("Creating target client")
+
+        create_database(TARGET_SERVER_NAME, TARGET_DB_USERNAME, TARGET_DB_PASSWORD, TARGET_DATABASE_NAME, TARGET_PORT)
+
+        target_postgresql_client = PostgreSqlClient(
+            server_name=TARGET_SERVER_NAME,
+            database_name=TARGET_DATABASE_NAME,
+            username=TARGET_DB_USERNAME,
+            password=TARGET_DB_PASSWORD,
+            port=TARGET_PORT,
+        )
+
+        extract_template_environment = Environment(
+            loader=FileSystemLoader(
+                pipeline_config.get("config").get("extract_template_path")
+            )
+        )
+        pipeline_logging.logger.info("Perform extract and load")
+        extract_load(
+            template_environment=extract_template_environment,
+            source_postgresql_client=source_postgresql_client,
+            target_postgresql_client=target_postgresql_client,
+        )
+
+        transform_template_environment = Environment(
+            loader=FileSystemLoader(
+                pipeline_config.get("config").get("transform_template_path")
+            )
+        )
+
+        # create nodes
+        staging_films = SqlTransform(
+            table_name="staging_playlists",
+            postgresql_client=target_postgresql_client,
+            environment=transform_template_environment,
+        )
+        serving_sales_customer = SqlTransform(
+            table_name="staging_artists",
+            postgresql_client=target_postgresql_client,
+            environment=transform_template_environment,
+        )
+
+        # create DAG
+        dag = TopologicalSorter()
+        dag.add(staging_films)
+        dag.add(serving_sales_customer)
+        # run transform
+        pipeline_logging.logger.info("Perform transform")
+        transform(dag=dag)
+        pipeline_logging.logger.info("Pipeline complete")
+        metadata_logging.log(
+            status=MetaDataLoggingStatus.RUN_SUCCESS, logs=pipeline_logging.get_logs()
+        )
+        pipeline_logging.logger.handlers.clear()
+    except BaseException as e:
+        pipeline_logging.logger.error(f"Pipeline failed with exception {e}")
+        metadata_logging.log(
+            status=MetaDataLoggingStatus.RUN_FAILURE, logs=pipeline_logging.get_logs()
+        )
+        pipeline_logging.logger.handlers.clear()
+
+
+
 
 
 
@@ -309,6 +423,9 @@ def run_pipeline(
         pipeline_logging.logger.handlers.clear()
 
 
+
+
+
 if __name__ == "__main__":
     load_dotenv()
     LOGGING_SERVER_NAME = os.environ.get("LOGGING_SERVER_NAME")
@@ -317,16 +434,7 @@ if __name__ == "__main__":
     LOGGING_PASSWORD = os.environ.get("LOGGING_PASSWORD")
     LOGGING_PORT = os.environ.get("LOGGING_PORT")
 
-    # get config variables
-    yaml_file_path = __file__.replace(".py", ".yaml")
-    if Path(yaml_file_path).exists():
-        with open(yaml_file_path) as yaml_file:
-            pipeline_config = yaml.safe_load(yaml_file)
-            PIPELINE_NAME = pipeline_config.get("name")
-    else:
-        raise Exception(
-            f"Missing {yaml_file_path} file! Please create the yaml file with at least a `name` key for the pipeline name."
-        )
+    create_database(LOGGING_SERVER_NAME, LOGGING_USERNAME, LOGGING_PASSWORD, LOGGING_DATABASE_NAME, LOGGING_PORT)
 
     postgresql_logging_client = PostgreSqlClient(
         server_name=LOGGING_SERVER_NAME,
@@ -335,15 +443,41 @@ if __name__ == "__main__":
         password=LOGGING_PASSWORD,
         port=LOGGING_PORT,
     )
+    
+    # Load and validate YAML configuration for the pipelines
+    yaml_file_path = __file__.replace(".py", ".yaml")
+    if not Path(yaml_file_path).exists():
+        raise Exception(f"Missing {yaml_file_path} file! Please create the yaml file.")
+    with open(yaml_file_path) as yaml_file:
+        config = yaml.safe_load(yaml_file)
 
-    # set schedule
-    schedule.every(pipeline_config.get("schedule").get("run_minutes")).minutes.do(
+    # For the first pipeline
+    pipelines_config = config.get("pipelines")
+    if not pipelines_config:
+        raise Exception("Configuration for 'pipelines' is required.")
+
+    # For the SQL pipeline
+    pipeline_sql_config = config.get("pipeline_sql")
+    if not pipeline_sql_config:
+        raise Exception("Configuration for 'pipeline_sql' is required.")
+
+    # Schedule for the normal pipeline
+    schedule.every(pipelines_config.get("schedule").get("run_minutes")).minutes.do(
         run_pipeline,
-        pipeline_name=PIPELINE_NAME,
+        pipeline_name=pipelines_config.get("name"),
         postgresql_logging_client=postgresql_logging_client,
-        pipeline_config=pipeline_config,
+        pipeline_config=pipelines_config,
     )
 
+    # Schedule for the SQL pipeline
+    schedule.every(pipeline_sql_config.get("schedule").get("run_seconds")).seconds.do(
+        run_pipeline_sql,
+        pipeline_config=pipeline_sql_config,
+        postgresql_logging_client=postgresql_logging_client,
+    )
+
+    # Run scheduled tasks
     while True:
         schedule.run_pending()
-        time.sleep(pipeline_config.get("schedule").get("poll_seconds"))
+        time.sleep(min(pipelines_config.get("schedule").get("poll_seconds"),
+                       pipeline_sql_config.get("schedule").get("poll_seconds")))
