@@ -12,11 +12,21 @@ playlist_dict:
   US: "37i9dQZEVXbLRQDuF5jeBp"
   PT: "37i9dQZEVXbKyJS56d1pgi"
 
-name: pipelines
-config: 
-  log_folder_path: "./etl_project/logs"
-  artist_id_folder_path: "etl_project/data/top_artist_from_global50.csv"
-schedule:
-  run_minutes: 0.1 # Setting for how often the pipeline should run, in minutes
-  poll_seconds: 3000  # Setting for how often to check the schedule, in seconds
+pipelines:
+  name: "pipelines"
+  config: 
+    log_folder_path: "./etl_project/logs"
+    artist_id_folder_path: "etl_project/data/top_artist_from_global50.csv"
+  schedule:
+    run_minutes: 0.1
+    poll_seconds: 0.2
 
+pipeline_sql:
+  name: "pipeline_sql"
+  config: 
+    extract_template_path: "./etl_project/assets/sql/extract"
+    transform_template_path: "./etl_project/assets/sql/transform"
+    log_folder_path: "./etl_project/logs"
+  schedule:
+    run_seconds: 5
+    poll_seconds: 2

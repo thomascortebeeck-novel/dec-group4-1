@@ -28,10 +28,10 @@ class MetaDataLogging:
         self.table = Table(
             self.log_table_name,
             self.metadata,
-            Column("pipeline_name", String),
-            Column("run_id", Integer),
-            Column("timestamp", String),
-            Column("status", String),
+            Column("pipeline_name", String, primary_key=True),
+            Column("run_id", Integer, primary_key=True),
+            Column("timestamp", String, primary_key=True),
+            Column("status", String, primary_key=True),
             Column("config", JSON),
             Column("logs", String),
         )
@@ -39,7 +39,7 @@ class MetaDataLogging:
 
     def _create_log_table(self) -> None:
         """Create log table if it does not exist."""
-        self.postgresql_client.create_table(metadata=self.metadata)
+        self.postgresql_client.create_all_tables(metadata=self.metadata)
 
     def _get_run_id(self):
         """Gets the next run id. Sets run id to 1 if no run id exists."""
