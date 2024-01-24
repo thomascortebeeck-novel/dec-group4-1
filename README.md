@@ -75,21 +75,21 @@ SPOTIFY_CLIENT_SECRET={your_spotify_client_secret}
 
 # Source Database Configuration
 SOURCE_DB_USERNAME={username}
-SOURCE_DB_PASSWORD={password}
+SOURCE_DB_PASSWORD={your_rds_db_password}
 SOURCE_SERVER_NAME={your_rds_server_endpoint}
 SOURCE_DATABASE_NAME={db_name}
 SOURCE_PORT={port}
 
 # Logging Database Configuration
 LOGGING_USERNAME={username}
-LOGGING_PASSWORD={password}
+LOGGING_PASSWORD={your_rds_db_password}
 LOGGING_SERVER_NAME={your_rds_server_endpoint}
 LOGGING_DATABASE_NAME={db_name}
 LOGGING_PORT={port}
 
 # Target Database for Processed Data
 TARGET_DB_USERNAME={username}
-TARGET_DB_PASSWORD={password}
+TARGET_DB_PASSWORD={your_rds_db_password}
 TARGET_SERVER_NAME={your_rds_server_endpoint}
 TARGET_DATABASE_NAME={db_name}
 TARGET_PORT={port}
@@ -115,7 +115,7 @@ docker push your-aws-account-id.dkr.ecr.your-region.amazonaws.com/spoty_etl:late
 
 3. Create an ECS Task Definition
 In the AWS ECS console, create a new task definition. This task definition will reference the Docker image you pushed to ECR.
-Choose the appropriate launch type (e.g., Fargate or EC2).
+Choose the appropriate launch type (EC2).
 Define the task execution IAM role which gives your task permissions to make AWS API calls.
 Configure the task size, including CPU and memory allocations.
 Add a container definition:
@@ -126,7 +126,7 @@ Define environment variables and command if necessary.
 4. Configure an ECS Cluster
 Set up an ECS cluster if you don't have one. The cluster is a logical grouping of tasks or services.
 Go to the ECS console and create a new cluster.
-Select the cluster type (e.g., Fargate).
+Select the cluster type (EC2).
 Follow the prompts to configure cluster settings.
 
 5. Create an ECS Service
