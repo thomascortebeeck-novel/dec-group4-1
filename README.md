@@ -115,7 +115,6 @@ docker push your-aws-account-id.dkr.ecr.your-region.amazonaws.com/spoty_etl:late
 
 3. Create an ECS Task Definition
 In the AWS ECS console, create a new task definition. This task definition will reference the Docker image you pushed to ECR.
-
 Choose the appropriate launch type (e.g., Fargate or EC2).
 Define the task execution IAM role which gives your task permissions to make AWS API calls.
 Configure the task size, including CPU and memory allocations.
@@ -126,14 +125,12 @@ Define environment variables and command if necessary.
 
 4. Configure an ECS Cluster
 Set up an ECS cluster if you don't have one. The cluster is a logical grouping of tasks or services.
-
 Go to the ECS console and create a new cluster.
 Select the cluster type (e.g., Fargate).
 Follow the prompts to configure cluster settings.
 
 5. Create an ECS Service
 Within your cluster, create a new service that will run and maintain the desired number of task instances.
-
 Choose the cluster you created.
 Start the "Create Service" wizard.
 Select the task definition and revision you created.
@@ -141,22 +138,20 @@ Configure the service:
 Choose the service type.
 Define the number of tasks to run concurrently.
 Configure the network and security settings.
+
 6. Start the ECS Service
 Once the service is configured, start it. AWS ECS will automatically deploy the specified number of tasks and ensure they are running.
-
 Review your service configuration.
 Click "Create Service."
 Once the service is created, ECS will start running instances of your task according to your configuration.
+
 7. IAM Role Configuration for S3 Access
 To allow your ECS tasks to read the .env file from an Amazon S3 bucket, you need to attach the appropriate permissions to the IAM role used by ECS tasks.
-
 Create or Edit an IAM Role:
-
 Go to the IAM console in AWS.
 If you already have an IAM role for your ECS tasks, select it. Otherwise, create a new role.
 Ensure the role is assignable to ECS tasks.
 Attach Policies for S3 Access:
-
 Attach the AmazonS3ReadOnlyAccess policy to the role. This provides read-only access to all your S3 buckets and objects.
 If you need more restricted access, create a custom policy with specific permissions to only read the .env file from the specified bucket, and attach this policy to the role.
 Custom Policy Example:
@@ -176,11 +171,9 @@ Here's an example policy allowing read access to a specific .env file in a speci
 ```
 Replace your-bucket-name and path/to/your/.env with your actual bucket name and .env file path.
 Attach the Role to the ECS Task Definition:
-
 Edit your ECS task definition and attach the IAM role with S3 access.
 Save the changes to the task definition.
 Environment Variable Retrieval in Application:
-
 Modify your application's startup script or code to retrieve the .env file from S3 upon initialization.
 Use AWS SDKs or CLI commands to download the .env file from the S3 bucket.
 By configuring this IAM role, your ECS tasks will have the necessary permissions to access and read the .env file from an S3 bucket, ensuring secure and efficient management of configuration settings.
