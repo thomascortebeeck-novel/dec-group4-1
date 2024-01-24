@@ -74,35 +74,25 @@ SPOTIFY_CLIENT_ID={your_spotify_client_id}
 SPOTIFY_CLIENT_SECRET={your_spotify_client_secret}
 
 # Source Database Configuration
-SOURCE_DB_USERNAME=postgres
-SOURCE_DB_PASSWORD=postgres
+SOURCE_DB_USERNAME={username}
+SOURCE_DB_PASSWORD={password}
 SOURCE_SERVER_NAME={your_rds_server_endpoint}
-SOURCE_DATABASE_NAME=spoty
-SOURCE_PORT=5432
-
-# Target Database Configuration
-DB_USERNAME=postgres
-DB_PASSWORD=postgres
-SERVER_NAME={your_rds_server_endpoint}
-DATABASE_NAME=spoty
-PORT=5432
-
-# CSV File Configuration
-CSVFILE=top_40_artists.csv
+SOURCE_DATABASE_NAME={db_name}
+SOURCE_PORT={port}
 
 # Logging Database Configuration
+LOGGING_USERNAME={username}
+LOGGING_PASSWORD={password}
 LOGGING_SERVER_NAME={your_rds_server_endpoint}
-LOGGING_DATABASE_NAME=spoty
-LOGGING_USERNAME=postgres
-LOGGING_PASSWORD=postgres
-LOGGING_PORT=5432
+LOGGING_DATABASE_NAME={db_name}
+LOGGING_PORT={port}
 
 # Target Database for Processed Data
-TARGET_DATABASE_NAME=spoty_treated
+TARGET_DB_USERNAME={username}
+TARGET_DB_PASSWORD={password}
 TARGET_SERVER_NAME={your_rds_server_endpoint}
-TARGET_DB_USERNAME=postgres
-TARGET_DB_PASSWORD=postgres
-TARGET_PORT=5432
+TARGET_DATABASE_NAME={db_name}
+TARGET_PORT={port}
 ```
 
 ## Docker Container Setup with AWS ECS
