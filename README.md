@@ -215,6 +215,8 @@ The ETL Pipeline for Spotify Data is a powerful tool with a range of potential a
 - **User Interface Improvement**: Use data to design more engaging and user-friendly streaming interfaces.
 ### Global Music Consumption Insights
 - **Worldwide Music Trends**: Gain global insights into music preferences, revealing cross-cultural music consumption patterns.
+## Presentation
+Slides: https://docs.google.com/presentation/d/1AcLuLd79Xrkic9VMaWo4IccBm3xHqfwnlOx0E7i1RUU/edit#slide=id.g2b24ecade12_0_16
 
 This ETL pipeline not only represents a technical milestone in data processing but also serves as a key to understanding and leveraging music consumption trends and their broader cultural impact.
 ## Contributors
